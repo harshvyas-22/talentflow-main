@@ -98,11 +98,25 @@ async function handleIndexedDBFallback(endpoint, options = {}) {
     const { db } = await import('./database');
     
     // Parse the endpoint to determine which table to query
-    const endpointPath = endpoint.replace(/^\/api\//, '');
-    const questionMarkIndex = endpointPath.indexOf('?');
-    const path = (questionMarkIndex >= 0 ? endpointPath.substring(0, questionMarkIndex) : endpointPath).split('/');
-    const resource = path[0];
-    const id = path[1] ? parseInt(path[1], 10) : null;
+    // First, remove any leading slashes and /api/ prefix
+    const normalizedEndpoint = endpoint.replace(/^\/+/, '').replace(/^api\/+/, '');
+    
+    // Handle empty endpoint
+    if (!normalizedEndpoint) {
+      console.warn('Empty endpoint after normalization, defaulting to jobs resource');
+      return db.jobs.toArray();
+    }
+    
+    // Parse path and query string
+    const questionMarkIndex = normalizedEndpoint.indexOf('?');
+    const pathPart = questionMarkIndex >= 0 ? normalizedEndpoint.substring(0, questionMarkIndex) : normalizedEndpoint;
+    const path = pathPart.split('/').filter(segment => segment); // Remove empty segments
+    
+    // Extract resource and ID
+    const resource = path.length > 0 ? path[0] : 'jobs'; // Default to jobs if not specified
+    const id = path.length > 1 ? parseInt(path[1], 10) : null;
+    
+    console.log(`Parsed endpoint: resource=${resource}, id=${id}`);
     
     // Based on the HTTP method and resource, perform the appropriate IndexedDB operation
     const method = options.method || 'GET';
@@ -249,15 +263,28 @@ async function handleIndexedDBFallback(endpoint, options = {}) {
     return [];
   } catch (error) {
     console.error(`IndexedDB fallback error for ${endpoint}:`, error);
-  // Return empty arrays or objects instead of error messages
-    if (!resource || resource === '') {
-      console.log('No resource found in endpoint, returning empty array');
+    // Extract resource from the endpoint for error handling
+    let resourceType = 'unknown';
+    
+    if (endpoint.includes('/jobs')) {
+      resourceType = 'jobs';
+    } else if (endpoint.includes('/candidates')) {
+      resourceType = 'candidates';
+    } else if (endpoint.includes('/assessments')) {
+      resourceType = 'assessments';
+    }
+    
+    console.log(`Determined resource type for error handling: ${resourceType}`);
+    
+    // Return empty arrays or objects instead of error messages
+    if (resourceType === 'unknown') {
+      console.log('No resource determined from endpoint, returning empty array');
       return [];
-    } else if (endpoint.includes('/candidates') && !endpoint.includes('/candidates/')) {
+    } else if (resourceType === 'candidates' && !endpoint.includes('/candidates/')) {
       return { candidates: [], pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 } };
-    } else if (endpoint.includes('/jobs') && !endpoint.includes('/jobs/')) {
+    } else if (resourceType === 'jobs' && !endpoint.includes('/jobs/')) {
       return [];
-    } else if (endpoint.includes('/assessments') && !endpoint.includes('/assessments/')) {
+    } else if (resourceType === 'assessments' && !endpoint.includes('/assessments/')) {
       return [];
     } else if (endpoint.includes('/timeline')) {
       return [];
@@ -286,13 +313,21 @@ export const jobsApi = {
     const queryString = searchParams.toString();
     const endpoint = queryString ? `/jobs?${queryString}` : '/jobs';
     
+    console.log('Fetching jobs with filter params:', params);
     console.log('Fetching jobs with params:', params, 'endpoint:', endpoint);
     
     try {
       const jobs = await apiCall(endpoint);
       
+      // Additional logging to diagnose issues
+      console.log('Jobs API response:', jobs);
+      
       // Critical: Ensure we always return an array
-      if (!jobs) return [];
+      if (!jobs) {
+        console.warn('No jobs returned from API, returning empty array');
+        return [];
+      }
+      
       if (jobs.error) {
         console.error('Failed to fetch jobs:', jobs.message);
         return [];

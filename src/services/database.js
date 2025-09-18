@@ -55,6 +55,23 @@ export async function initializeDatabase() {
   let retries = 0;
   const maxRetries = 3;
   
+  // Before starting, check if the database is already open
+  if (db.isOpen()) {
+    try {
+      console.log('Database is already open, checking for data...');
+      const jobCount = await db.jobs.count();
+      console.log(`Found ${jobCount} existing jobs in already open database`);
+      
+      if (jobCount > 0) {
+        console.log('Database already initialized and contains data');
+        return true;
+      }
+    } catch (checkError) {
+      console.warn('Error checking existing database:', checkError);
+      // Continue with initialization
+    }
+  }
+  
   while (retries < maxRetries) {
     try {
       console.log(`Initializing database (attempt ${retries + 1}/${maxRetries})...`);
@@ -62,6 +79,19 @@ export async function initializeDatabase() {
       // For production or first-time setup, we'll clear the database
       if (process.env.NODE_ENV === 'production' || retries > 0) {
         console.log('Clearing database to ensure schema changes take effect...');
+        
+        // Make sure the database is closed before deleting
+        if (db.isOpen()) {
+          try {
+            await db.close();
+            console.log('Database closed successfully before deletion');
+          } catch (closeError) {
+            console.warn('Error closing database:', closeError);
+            // Continue anyway
+          }
+        }
+        
+        // Now try to delete the database
         try {
           await db.delete();
           console.log('Database deleted successfully');
@@ -71,8 +101,12 @@ export async function initializeDatabase() {
       }
       
       // Open the database with the current schema
-      await db.open();
-      console.log('Database opened successfully');
+      if (!db.isOpen()) {
+        await db.open();
+        console.log('Database opened successfully');
+      } else {
+        console.log('Database is already open');
+      }
       
       // Check if we need to seed data
       const jobCount = await db.jobs.count();
