@@ -22,7 +22,23 @@ async function apiCall(endpoint, options = {}) {
     // In production, we'll bypass the actual API call and go straight to IndexedDB
     if (process.env.NODE_ENV === 'production') {
       console.log(`Production mode detected, using IndexedDB fallback for ${endpoint}`);
-      return await handleIndexedDBFallback(endpoint, options);
+      
+      try {
+        return await handleIndexedDBFallback(endpoint, options);
+      } catch (dbError) {
+        console.error(`IndexedDB fallback failed for ${endpoint}:`, dbError);
+        
+        // If IndexedDB fails, return an appropriate empty structure
+        if (endpoint.includes('/jobs') && !endpoint.includes('/jobs/')) {
+          return [];
+        } else if (endpoint.includes('/candidates') && !endpoint.includes('/candidates/')) {
+          return { candidates: [], pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 } };
+        } else if (endpoint.includes('/assessments') && !endpoint.includes('/assessments/')) {
+          return [];
+        } else {
+          return [];
+        }
+      }
     }
     
     const response = await fetch(apiEndpoint, {

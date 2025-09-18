@@ -7,7 +7,6 @@ import CandidatesPage from './pages/CandidatesPage';
 import CandidateDetailPage from './pages/CandidateDetailPage';
 import AssessmentsPage from './pages/AssessmentsPage';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from 'react-hot-toast';
 import ErrorBoundary from './components/ErrorBoundary';
 
 // Create a client
@@ -38,7 +37,6 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Toaster position="top-right" />
         <Layout>
           <Routes>
             <Route path="/" element={<Navigate to="/jobs" replace />} />

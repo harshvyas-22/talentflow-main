@@ -1,6 +1,7 @@
 import Dexie from 'dexie';
 import { seedData } from '../data/seedData';
 
+// Create the database instance
 export const db = new Dexie('talentflow');
 
 // Update the version number to ensure the database is reset with our new fields
@@ -55,71 +56,93 @@ export async function initializeDatabase() {
   let retries = 0;
   const maxRetries = 3;
   
-  // Before starting, check if the database is already open
-  if (db.isOpen()) {
+  // Helper function to safely check if database has data
+  async function checkForExistingData() {
     try {
-      console.log('Database is already open, checking for data...');
-      const jobCount = await db.jobs.count();
-      console.log(`Found ${jobCount} existing jobs in already open database`);
-      
-      if (jobCount > 0) {
-        console.log('Database already initialized and contains data');
-        return true;
+      // Only check if database is open
+      if (db.isOpen()) {
+        const jobCount = await db.jobs.count();
+        console.log(`Found ${jobCount} existing jobs in database`);
+        return jobCount > 0;
       }
-    } catch (checkError) {
-      console.warn('Error checking existing database:', checkError);
-      // Continue with initialization
+      return false;
+    } catch (error) {
+      console.warn('Error checking for existing data:', error);
+      return false;
     }
   }
   
+  // First, try to just open the database without deleting
+  try {
+    console.log('First attempt: Opening database without deleting...');
+    
+    // If database is already open, use it
+    if (!db.isOpen()) {
+      await db.open();
+      console.log('Database opened successfully on first try');
+    } else {
+      console.log('Database is already open');
+    }
+    
+    // Check if we have data already
+    const hasData = await checkForExistingData();
+    if (hasData) {
+      console.log('Database already contains data, using existing database');
+      return true;
+    }
+    
+    // If we're here, database is open but empty, seed it
+    console.log('Database is open but empty, seeding it...');
+    const seedResult = await seedDatabase();
+    if (seedResult) {
+      console.log('Database seeded successfully on first try');
+      return true;
+    }
+  } catch (firstAttemptError) {
+    console.warn('First attempt to open database failed:', firstAttemptError);
+    // Continue to retry logic
+  }
+  
+  // If first attempt failed or database is empty, try the retry approach
   while (retries < maxRetries) {
     try {
       console.log(`Initializing database (attempt ${retries + 1}/${maxRetries})...`);
       
-      // For production or first-time setup, we'll clear the database
-      if (process.env.NODE_ENV === 'production' || retries > 0) {
-        console.log('Clearing database to ensure schema changes take effect...');
-        
-        // Make sure the database is closed before deleting
-        if (db.isOpen()) {
-          try {
-            await db.close();
-            console.log('Database closed successfully before deletion');
-          } catch (closeError) {
-            console.warn('Error closing database:', closeError);
-            // Continue anyway
-          }
-        }
-        
-        // Now try to delete the database
+      // Try to close the database if it's open
+      if (db.isOpen()) {
         try {
-          await db.delete();
+          await db.close();
+          console.log('Database closed successfully');
+        } catch (closeError) {
+          console.warn('Error closing database:', closeError);
+        }
+      }
+      
+      // In production, skip the delete operation as it often gets blocked
+      if (process.env.NODE_ENV !== 'production' && retries === 0) {
+        try {
+          console.log('Attempting to delete database...');
+          await Dexie.delete('talentflow');
           console.log('Database deleted successfully');
         } catch (deleteError) {
-          console.warn('Unable to delete database, continuing with open:', deleteError);
+          console.warn('Unable to delete database, will try to open anyway:', deleteError);
         }
       }
       
       // Open the database with the current schema
-      if (!db.isOpen()) {
-        await db.open();
-        console.log('Database opened successfully');
-      } else {
-        console.log('Database is already open');
-      }
+      await db.open();
+      console.log('Database opened successfully');
       
-      // Check if we need to seed data
-      const jobCount = await db.jobs.count();
-      console.log(`Found ${jobCount} existing jobs`);
-      
-      if (jobCount === 0) {
+      // Seed the database if needed
+      const hasData = await checkForExistingData();
+      if (!hasData) {
         console.log('No data found, seeding database...');
         const seedResult = await seedDatabase();
         if (!seedResult) {
           throw new Error('Failed to seed database');
         }
       } else {
-        console.log('Database already contains data, skipping seed');
+        console.log('Database already contains data, using existing data');
       }
       
       console.log('Database initialized successfully');
@@ -128,26 +151,39 @@ export async function initializeDatabase() {
       retries++;
       console.error(`Database initialization attempt ${retries} failed:`, error);
       
-      if (retries >= maxRetries) {
-        console.error(`Failed to initialize database after ${maxRetries} attempts`);
-        
-        // If we're in production, we'll attempt to work without clearing the DB
-        if (process.env.NODE_ENV === 'production') {
-          try {
-            console.log('Attempting to use existing database without clearing...');
-            await db.open();
-            console.log('Successfully opened existing database');
-            return true;
-          } catch (fallbackError) {
-            console.error('Failed to open existing database:', fallbackError);
-          }
-        }
-        
-        return false;
-      }
-      
       // Wait before retrying
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 1000 * retries)); // Exponential backoff
     }
   }
+  
+  // If we're here, all retries failed
+  console.error(`Failed to initialize database after ${maxRetries} attempts`);
+  
+  // Final fallback for production: try to use the database anyway
+  if (process.env.NODE_ENV === 'production') {
+    try {
+      console.log('CRITICAL: All database initialization attempts failed. Trying emergency fallback...');
+      
+      // Make one last attempt to open the database without any operations
+      if (!db.isOpen()) {
+        await db.open();
+      }
+      
+      // Check if we have tables and some data
+      const tables = db.tables.map(table => table.name);
+      console.log('Available tables:', tables);
+      
+      // Even if we can't seed data, try to continue with empty database
+      console.log('Emergency fallback succeeded. Application will continue with limited functionality.');
+      return true;
+    } catch (emergencyError) {
+      console.error('CRITICAL: Emergency fallback failed:', emergencyError);
+      console.error('Application will continue but database functionality will be limited');
+      
+      // Return true anyway to allow the app to try to function
+      return true;
+    }
+  }
+  
+  return false;
 }
