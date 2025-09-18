@@ -12,15 +12,9 @@ db.version(7).stores({
   assessmentResponses: '++id, assessmentId, candidateId, createdAt, completed'
 });
 
-export async function initializeDatabase() {
+// Function to seed the database with initial data
+async function seedDatabase() {
   try {
-    console.log('Initializing database...');
-    
-    // Force a database clear to ensure schema changes take effect
-    console.log('Clearing database to ensure schema changes take effect...');
-    await db.delete();
-    await db.open();
-    
     console.log('Seeding database with initial data...');
     
     // Make sure all jobs have order properties
@@ -50,8 +44,41 @@ export async function initializeDatabase() {
     }
     
     console.log('Database seeded successfully');
+    return true;
   } catch (error) {
     console.error('Error seeding database:', error);
-    // Continue execution even if seeding fails
+    return false;
   }
-};
+}
+
+export async function initializeDatabase() {
+  try {
+    console.log('Initializing database...');
+    
+    // Force a database clear to ensure schema changes take effect
+    console.log('Clearing database to ensure schema changes take effect...');
+    await db.delete();
+    await db.open();
+    
+    console.log('Initializing mock database...');
+    
+    // Seed the database with initial data
+    await seedDatabase();
+    
+    console.log('Database initialized successfully');
+    return true;
+  } catch (error) {
+    console.error('Error initializing database:', error);
+    
+    // Try again with just opening the database without deleting
+    try {
+      await db.open();
+      await seedDatabase();
+      console.log('Database initialized successfully on second attempt');
+      return true;
+    } catch (secondError) {
+      console.error('Failed to initialize database after second attempt:', secondError);
+      return false;
+    }
+  }
+}

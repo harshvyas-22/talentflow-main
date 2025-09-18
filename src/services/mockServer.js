@@ -3,16 +3,22 @@ import { setupWorker } from 'msw/browser' // Import setupWorker from msw/browser
 import { db } from './database'
 import { seedJobs, seedCandidates } from '../data/seedData'
 
+// Create a fallback handler for when database operations fail
+const fallbackHandler = (data) => {
+  return http.get('/api/*', () => {
+    console.log('Using fallback data handler for API requests');
+    return HttpResponse.json(data || { message: 'No data available' });
+  });
+};
 
 // Update the latency function at the top
 const addLatency = () => new Promise(resolve => 
   // Reduce latency to 50-150ms for better drag and drop experience
   // setTimeout(resolve, Math.random() * 100 +50)
   setTimeout(resolve, 10)
-  
 );
 
-const shouldError = () => Math.random() < 0.08; // 8% error rate
+const shouldError = () => Math.random() < 0.05; // 5% error rate
 
 // Define seedAssessments with sample data
 const seedAssessments = [

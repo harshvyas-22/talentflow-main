@@ -1,12 +1,22 @@
+// Check if we're in a production environment
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Define the API base URL
+// In production, we'll use relative paths since we're using IndexedDB
 const API_BASE_URL = '/api';
 
-// Generic API call function
+// Generic API call function with fallback to IndexedDB
 async function apiCall(endpoint, options = {}) {
   try {
     // Remove the redundant /api prefix from the endpoint if it already exists
     const apiEndpoint = endpoint.startsWith('/api') ? endpoint : `/api${endpoint}`;
     
     console.log(`API call to ${apiEndpoint}`, options);
+    
+    // In production, we'll bypass the actual API call and go straight to IndexedDB
+    if (isProduction) {
+      return await handleIndexedDBFallback(endpoint, options);
+    }
     
     const response = await fetch(apiEndpoint, {
       ...options,
@@ -18,10 +28,15 @@ async function apiCall(endpoint, options = {}) {
 
     // Check if response is ok
     if (!response.ok) {
+      // If we get a 404 in production, we should fall back to IndexedDB
+      if (response.status === 404 && isProduction) {
+        return await handleIndexedDBFallback(endpoint, options);
+      }
+      
       // Only log errors that aren't 404s for assessments
       const is404ForAssessment = response.status === 404 && 
-                                 (endpoint.includes('/assessments/') || 
-                                  endpoint.includes('/candidates/') && endpoint.includes('/assessment'));
+                               (endpoint.includes('/assessments/') || 
+                                endpoint.includes('/candidates/') && endpoint.includes('/assessment'));
       
       if (!is404ForAssessment) {
         console.error(`API error: ${response.status} for ${endpoint}`);
@@ -45,14 +60,112 @@ async function apiCall(endpoint, options = {}) {
     const data = await response.json();
     console.log(`API response from ${apiEndpoint}:`, data);
     return data;
-    return data;
   } catch (error) {
     console.error(`API Error (${endpoint}):`, error);
-    return { error: true, message: error.message };
+    
+    // In case of network errors in production, fall back to IndexedDB
+    if (isProduction) {
+      return await handleIndexedDBFallback(endpoint, options);
+    }
+    
+    return { 
+      error: true, 
+      message: error.message || 'Network error' 
+    };
   }
 }
 
-// Jobs API
+// Function to handle fallback to IndexedDB when API calls fail
+async function handleIndexedDBFallback(endpoint, options = {}) {
+  try {
+    console.log(`Using IndexedDB fallback for ${endpoint}`);
+    const { db } = await import('./database');
+    
+    // Parse the endpoint to determine which table to query
+    const path = endpoint.replace(/^\/api\//, '').split('/');
+    const resource = path[0];
+    const id = path[1] ? parseInt(path[1], 10) : null;
+    
+    // Based on the HTTP method and resource, perform the appropriate IndexedDB operation
+    const method = options.method || 'GET';
+    
+    if (resource === 'jobs') {
+      if (method === 'GET') {
+        if (id) {
+          const job = await db.jobs.get(id);
+          return job || { error: true, message: 'Job not found' };
+        } else {
+          const jobs = await db.jobs.toArray();
+          return jobs || [];
+        }
+      }
+      // Add other methods (POST, PUT, DELETE) as needed
+    } 
+    else if (resource === 'candidates') {
+      if (method === 'GET') {
+        if (id) {
+          const candidate = await db.candidates.get(id);
+          return candidate || { error: true, message: 'Candidate not found' };
+        } else {
+          // Handle pagination if present in the query params
+          const urlParams = new URLSearchParams(endpoint.split('?')[1] || '');
+          const page = parseInt(urlParams.get('page') || '1', 10);
+          const pageSize = parseInt(urlParams.get('pageSize') || '20', 10);
+          
+          const allCandidates = await db.candidates.toArray();
+          const total = allCandidates.length;
+          
+          if (urlParams.get('all') === 'true') {
+            return allCandidates;
+          }
+          
+          const startIndex = (page - 1) * pageSize;
+          const paginatedCandidates = allCandidates.slice(startIndex, startIndex + pageSize);
+          
+          return {
+            candidates: paginatedCandidates,
+            pagination: {
+              page,
+              pageSize,
+              total,
+              totalPages: Math.ceil(total / pageSize)
+            }
+          };
+        }
+      }
+      // Add other methods as needed
+    } 
+    else if (resource === 'assessments') {
+      if (method === 'GET') {
+        if (id) {
+          const assessment = await db.assessments.get(id);
+          return assessment || { error: true, message: 'Assessment not found' };
+        } else {
+          const assessments = await db.assessments.toArray();
+          return assessments || [];
+        }
+      }
+      // Add other methods as needed
+    }
+    else if (resource === 'candidate-timeline') {
+      // Extract the candidate ID from the path
+      const candidateId = id;
+      if (candidateId) {
+        const timeline = await db.candidateTimeline
+          .where('candidateId')
+          .equals(candidateId)
+          .toArray();
+        return timeline || [];
+      }
+    }
+    
+    // Default fallback for any other endpoint
+    return { error: true, message: 'Resource not available in offline mode' };
+  } catch (error) {
+    console.error(`IndexedDB fallback error for ${endpoint}:`, error);
+    return { error: true, message: 'Failed to access offline data' };
+  }
+}
 export const jobsApi = {
   getJobs: async (params = {}) => {
     // Build query params for filtering
