@@ -163,6 +163,150 @@ async function handleIndexedDBFallback(endpoint, options = {}) {
         }
       }
       // Add other methods (POST, PUT, DELETE) as needed
+      else if (method === 'POST') {
+        try {
+          // Create a new job
+          console.log('Creating new job in IndexedDB:', options.body);
+          const jobData = JSON.parse(options.body);
+          
+          // Generate an ID if none is provided
+          if (!jobData.id) {
+            const highestId = await db.jobs.orderBy('id').reverse().limit(1).first();
+            jobData.id = highestId ? highestId.id + 1 : 1;
+          }
+          
+          // Add created timestamp
+          if (!jobData.createdAt) {
+            jobData.createdAt = new Date().toISOString();
+          }
+          
+          // Set a default status if none is provided
+          if (!jobData.status) {
+            jobData.status = 'open';
+          }
+          
+          // Set a default order if none is provided
+          if (!jobData.order) {
+            const highestOrder = await db.jobs.orderBy('order').reverse().limit(1).first();
+            jobData.order = highestOrder ? highestOrder.order + 1 : 1;
+          }
+          
+          // Ensure requirements is an array
+          if (!jobData.requirements) {
+            jobData.requirements = [];
+          }
+          
+          console.log('Saving job to IndexedDB:', jobData);
+          const newId = await db.jobs.put(jobData);
+          const newJob = await db.jobs.get(newId);
+          console.log('Job created in IndexedDB with ID:', newId);
+          return newJob;
+        } catch (createError) {
+          console.error('Error creating job in IndexedDB:', createError);
+          return { error: true, message: 'Failed to create job in IndexedDB' };
+        }
+      }
+      else if (method === 'PUT') {
+        try {
+          // Update existing job
+          if (!id) {
+            return { error: true, message: 'Job ID is required for updates' };
+          }
+          
+          console.log(`Updating job ${id} in IndexedDB`);
+          const jobData = JSON.parse(options.body);
+          
+          // Ensure the ID in the data matches the URL
+          jobData.id = id;
+          
+          // Ensure requirements is an array
+          if (!jobData.requirements) {
+            jobData.requirements = [];
+          }
+          
+          // Check if the job exists
+          const existingJob = await db.jobs.get(id);
+          if (!existingJob) {
+            return { error: true, message: 'Job not found' };
+          }
+          
+          console.log('Updating job in IndexedDB:', jobData);
+          await db.jobs.put(jobData);
+          const updatedJob = await db.jobs.get(id);
+          console.log('Job updated in IndexedDB');
+          return updatedJob;
+        } catch (updateError) {
+          console.error(`Error updating job ${id} in IndexedDB:`, updateError);
+          return { error: true, message: 'Failed to update job in IndexedDB' };
+        }
+      }
+      else if (method === 'DELETE') {
+        try {
+          // Delete job
+          if (!id) {
+            return { error: true, message: 'Job ID is required for deletion' };
+          }
+          
+          console.log(`Deleting job ${id} from IndexedDB`);
+          
+          // Check if the job exists
+          const existingJob = await db.jobs.get(id);
+          if (!existingJob) {
+            return { error: true, message: 'Job not found' };
+          }
+          
+          await db.jobs.delete(id);
+          console.log(`Job ${id} deleted from IndexedDB`);
+          return { success: true };
+        } catch (deleteError) {
+          console.error(`Error deleting job ${id} from IndexedDB:`, deleteError);
+          return { error: true, message: 'Failed to delete job from IndexedDB' };
+        }
+      }
+      else if (method === 'PATCH' && endpoint.includes('/reorder')) {
+        try {
+          // Reorder job
+          if (!id) {
+            return { error: true, message: 'Job ID is required for reordering' };
+          }
+          
+          const reorderData = JSON.parse(options.body);
+          const { fromOrder, toOrder } = reorderData;
+          
+          console.log(`Reordering job ${id} from ${fromOrder} to ${toOrder} in IndexedDB`);
+          
+          // Get the job to reorder
+          const jobToReorder = await db.jobs.get(id);
+          if (!jobToReorder) {
+            return { error: true, message: 'Job not found' };
+          }
+          
+          // Update all affected jobs
+          const allJobs = await db.jobs.toArray();
+          
+          // Update the orders
+          for (const job of allJobs) {
+            if (job.id === parseInt(id)) {
+              // This is the job we're moving
+              job.order = toOrder;
+            } else if (fromOrder < toOrder && job.order > fromOrder && job.order <= toOrder) {
+              // Jobs that need to move down
+              job.order -= 1;
+            } else if (fromOrder > toOrder && job.order >= toOrder && job.order < fromOrder) {
+              // Jobs that need to move up
+              job.order += 1;
+            }
+          }
+          
+          // Save all jobs
+          await db.jobs.bulkPut(allJobs);
+          console.log(`Job ${id} reordered in IndexedDB`);
+          return { success: true };
+        } catch (reorderError) {
+          console.error(`Error reordering job ${id} in IndexedDB:`, reorderError);
+          return { error: true, message: 'Failed to reorder job in IndexedDB' };
+        }
+      }
     } 
     else if (resource === 'candidates') {
       if (method === 'GET') {
@@ -211,6 +355,105 @@ async function handleIndexedDBFallback(endpoint, options = {}) {
         }
       }
       // Add other methods as needed
+      else if (method === 'POST') {
+        try {
+          // Create a new candidate
+          console.log('Creating new candidate in IndexedDB:', options.body);
+          const candidateData = JSON.parse(options.body);
+          
+          // Generate an ID if none is provided
+          if (!candidateData.id) {
+            const highestId = await db.candidates.orderBy('id').reverse().limit(1).first();
+            candidateData.id = highestId ? highestId.id + 1 : 1;
+          }
+          
+          // Add created timestamp
+          if (!candidateData.createdAt) {
+            candidateData.createdAt = new Date().toISOString();
+          }
+          
+          // Set a default stage if none is provided
+          if (!candidateData.stage) {
+            candidateData.stage = 'applied';
+          }
+          
+          // Ensure skills is an array
+          if (!candidateData.skills) {
+            candidateData.skills = [];
+          }
+          
+          console.log('Saving candidate to IndexedDB:', candidateData);
+          const newId = await db.candidates.put(candidateData);
+          const newCandidate = await db.candidates.get(newId);
+          console.log('Candidate created in IndexedDB with ID:', newId);
+          return newCandidate;
+        } catch (createError) {
+          console.error('Error creating candidate in IndexedDB:', createError);
+          return { error: true, message: 'Failed to create candidate in IndexedDB' };
+        }
+      }
+      else if (method === 'PATCH' || method === 'PUT') {
+        try {
+          // Update existing candidate
+          if (!id) {
+            return { error: true, message: 'Candidate ID is required for updates' };
+          }
+          
+          console.log(`Updating candidate ${id} in IndexedDB`);
+          let candidateData = JSON.parse(options.body);
+          
+          // Ensure the ID in the data matches the URL
+          candidateData.id = id;
+          
+          // Check if the candidate exists
+          const existingCandidate = await db.candidates.get(id);
+          if (!existingCandidate) {
+            return { error: true, message: 'Candidate not found' };
+          }
+          
+          // For PATCH, we only update the fields provided in the request
+          if (method === 'PATCH') {
+            candidateData = { ...existingCandidate, ...candidateData };
+          }
+          
+          // Ensure skills is an array
+          if (!candidateData.skills) {
+            candidateData.skills = [];
+          }
+          
+          console.log('Updating candidate in IndexedDB:', candidateData);
+          await db.candidates.put(candidateData);
+          const updatedCandidate = await db.candidates.get(id);
+          console.log('Candidate updated in IndexedDB');
+          return updatedCandidate;
+        } catch (updateError) {
+          console.error(`Error updating candidate ${id} in IndexedDB:`, updateError);
+          return { error: true, message: 'Failed to update candidate in IndexedDB' };
+        }
+      }
+      else if (method === 'DELETE') {
+        try {
+          // Delete candidate
+          if (!id) {
+            return { error: true, message: 'Candidate ID is required for deletion' };
+          }
+          
+          console.log(`Deleting candidate ${id} from IndexedDB`);
+          
+          // Check if the candidate exists
+          const existingCandidate = await db.candidates.get(id);
+          if (!existingCandidate) {
+            return { error: true, message: 'Candidate not found' };
+          }
+          
+          await db.candidates.delete(id);
+          console.log(`Candidate ${id} deleted from IndexedDB`);
+          return { success: true };
+        } catch (deleteError) {
+          console.error(`Error deleting candidate ${id} from IndexedDB:`, deleteError);
+          return { error: true, message: 'Failed to delete candidate from IndexedDB' };
+        }
+      }
     } 
     else if (resource === 'assessments') {
       if (method === 'GET') {
@@ -242,7 +485,95 @@ async function handleIndexedDBFallback(endpoint, options = {}) {
           return [];
         }
       }
-      // Add other methods as needed
+      else if (method === 'POST') {
+        try {
+          // Create a new assessment
+          console.log('Creating new assessment in IndexedDB:', options.body);
+          const assessmentData = JSON.parse(options.body);
+          
+          // Generate an ID if none is provided
+          if (!assessmentData.id) {
+            const highestId = await db.assessments.orderBy('id').reverse().limit(1).first();
+            assessmentData.id = highestId ? highestId.id + 1 : 1;
+          }
+          
+          // Add created timestamp
+          if (!assessmentData.createdAt) {
+            assessmentData.createdAt = new Date().toISOString();
+          }
+          
+          // Ensure questions is an array
+          if (!assessmentData.questions) {
+            assessmentData.questions = [];
+          }
+          
+          console.log('Saving assessment to IndexedDB:', assessmentData);
+          const newId = await db.assessments.put(assessmentData);
+          const newAssessment = await db.assessments.get(newId);
+          console.log('Assessment created in IndexedDB with ID:', newId);
+          return newAssessment;
+        } catch (createError) {
+          console.error('Error creating assessment in IndexedDB:', createError);
+          return { error: true, message: 'Failed to create assessment in IndexedDB' };
+        }
+      }
+      else if (method === 'PUT') {
+        try {
+          // Update existing assessment
+          if (!id) {
+            return { error: true, message: 'Assessment ID is required for updates' };
+          }
+          
+          console.log(`Updating assessment ${id} in IndexedDB`);
+          const assessmentData = JSON.parse(options.body);
+          
+          // Ensure the ID in the data matches the URL
+          assessmentData.id = id;
+          
+          // Check if the assessment exists
+          const existingAssessment = await db.assessments.get(id);
+          if (!existingAssessment) {
+            return { error: true, message: 'Assessment not found' };
+          }
+          
+          // Ensure questions is an array
+          if (!assessmentData.questions) {
+            assessmentData.questions = [];
+          }
+          
+          console.log('Updating assessment in IndexedDB:', assessmentData);
+          await db.assessments.put(assessmentData);
+          const updatedAssessment = await db.assessments.get(id);
+          console.log('Assessment updated in IndexedDB');
+          return updatedAssessment;
+        } catch (updateError) {
+          console.error(`Error updating assessment ${id} in IndexedDB:`, updateError);
+          return { error: true, message: 'Failed to update assessment in IndexedDB' };
+        }
+      }
+      else if (method === 'DELETE') {
+        try {
+          // Delete assessment
+          if (!id) {
+            return { error: true, message: 'Assessment ID is required for deletion' };
+          }
+          
+          console.log(`Deleting assessment ${id} from IndexedDB`);
+          
+          // Check if the assessment exists
+          const existingAssessment = await db.assessments.get(id);
+          if (!existingAssessment) {
+            return { error: true, message: 'Assessment not found' };
+          }
+          
+          await db.assessments.delete(id);
+          console.log(`Assessment ${id} deleted from IndexedDB`);
+          return { success: true };
+        } catch (deleteError) {
+          console.error(`Error deleting assessment ${id} from IndexedDB:`, deleteError);
+          return { error: true, message: 'Failed to delete assessment from IndexedDB' };
+        }
+      }
     }
     else if (resource === 'candidate-timeline') {
       try {
@@ -270,6 +601,160 @@ async function handleIndexedDBFallback(endpoint, options = {}) {
       } catch (timelineError) {
         console.error(`Error retrieving timeline for candidate ${id}:`, timelineError);
         return [];
+      }
+    }
+    else if (path.length >= 3 && path[0] === 'candidates' && path[2] === 'assessment') {
+      // Handle candidate assessment endpoints: /candidates/{candidateId}/assessment/{assessmentId}
+      const candidateId = parseInt(path[1], 10);
+      const assessmentId = path.length >= 4 ? parseInt(path[3], 10) : null;
+      
+      console.log(`Handling candidate assessment: candidateId=${candidateId}, assessmentId=${assessmentId}, method=${method}`);
+      
+      if (method === 'GET') {
+        try {
+          // Get a candidate's assessment result
+          if (!candidateId) {
+            return { error: true, message: 'Candidate ID is required' };
+          }
+          
+          if (assessmentId) {
+            // Get a specific assessment result for this candidate
+            const result = await db.candidateAssessments
+              .where(['candidateId', 'assessmentId'])
+              .equals([candidateId, assessmentId])
+              .first();
+            
+            if (result) {
+              console.log(`Found assessment result for candidate ${candidateId}, assessment ${assessmentId}`);
+              return result;
+            } else {
+              console.log(`No assessment result found for candidate ${candidateId}, assessment ${assessmentId}`);
+              return { 
+                candidateId, 
+                assessmentId,
+                completed: false, 
+                score: 0,
+                answers: []
+              };
+            }
+          } else {
+            // Get all assessment results for this candidate
+            const results = await db.candidateAssessments
+              .where('candidateId')
+              .equals(candidateId)
+              .toArray();
+            
+            console.log(`Found ${results.length} assessment results for candidate ${candidateId}`);
+            return results;
+          }
+        } catch (getError) {
+          console.error(`Error getting assessment results for candidate ${candidateId}:`, getError);
+          return [];
+        }
+      }
+      else if (method === 'POST' || method === 'PUT') {
+        try {
+          // Submit or update assessment results
+          if (!candidateId || !assessmentId) {
+            return { error: true, message: 'Both candidate ID and assessment ID are required' };
+          }
+          
+          const resultData = JSON.parse(options.body);
+          
+          // Ensure the IDs match the URL parameters
+          resultData.candidateId = candidateId;
+          resultData.assessmentId = assessmentId;
+          
+          // Add timestamp if not present
+          if (!resultData.submittedAt) {
+            resultData.submittedAt = new Date().toISOString();
+          }
+          
+          // Set completed flag if not present
+          if (resultData.completed === undefined) {
+            resultData.completed = true;
+          }
+          
+          console.log(`Saving assessment result for candidate ${candidateId}, assessment ${assessmentId}:`, resultData);
+          
+          // Use compound key of candidateId and assessmentId
+          await db.candidateAssessments.put(resultData);
+          
+          // Add a timeline entry for assessment completion if not already exists
+          if (resultData.completed) {
+            const existingEntry = await db.candidateTimeline
+              .where({
+                candidateId,
+                type: 'assessment_completed',
+                assessmentId
+              })
+              .first();
+              
+            if (!existingEntry) {
+              // Get assessment details for the timeline entry
+              const assessment = await db.assessments.get(assessmentId);
+              const assessmentTitle = assessment ? assessment.title : 'Assessment';
+              
+              const timelineEntry = {
+                id: Date.now(), // Use timestamp as unique ID
+                candidateId,
+                type: 'assessment_completed',
+                assessmentId,
+                date: resultData.submittedAt,
+                note: `Completed "${assessmentTitle}" assessment with score: ${resultData.score || 0}%`,
+                data: {
+                  assessmentId,
+                  score: resultData.score || 0
+                }
+              };
+              
+              await db.candidateTimeline.add(timelineEntry);
+              console.log(`Added timeline entry for assessment completion:`, timelineEntry);
+            }
+          }
+          
+          const savedResult = await db.candidateAssessments
+            .where(['candidateId', 'assessmentId'])
+            .equals([candidateId, assessmentId])
+            .first();
+            
+          console.log(`Assessment result saved for candidate ${candidateId}, assessment ${assessmentId}`);
+          return savedResult;
+        } catch (saveError) {
+          console.error(`Error saving assessment result for candidate ${candidateId}, assessment ${assessmentId}:`, saveError);
+          return { error: true, message: 'Failed to save assessment result' };
+        }
+      }
+      else if (method === 'DELETE') {
+        try {
+          // Delete assessment result
+          if (!candidateId || !assessmentId) {
+            return { error: true, message: 'Both candidate ID and assessment ID are required' };
+          }
+          
+          console.log(`Deleting assessment result for candidate ${candidateId}, assessment ${assessmentId}`);
+          
+          // Delete the assessment result
+          await db.candidateAssessments
+            .where(['candidateId', 'assessmentId'])
+            .equals([candidateId, assessmentId])
+            .delete();
+            
+          // Also remove any related timeline entries
+          await db.candidateTimeline
+            .where({
+              candidateId,
+              type: 'assessment_completed',
+              assessmentId
+            })
+            .delete();
+            
+          console.log(`Assessment result deleted for candidate ${candidateId}, assessment ${assessmentId}`);
+          return { success: true };
+        } catch (deleteError) {
+          console.error(`Error deleting assessment result for candidate ${candidateId}, assessment ${assessmentId}:`, deleteError);
+          return { error: true, message: 'Failed to delete assessment result' };
+        }
       }
     }
     
@@ -305,11 +790,20 @@ async function handleIndexedDBFallback(endpoint, options = {}) {
     } else if (endpoint.includes('/timeline')) {
       return [];
     } else if (endpoint.includes('/candidates/') && endpoint.includes('/assessment')) {
+      // Try to extract IDs from the endpoint path
+      const pathParts = endpoint.split('/').filter(p => p);
+      const candidateIdIndex = pathParts.indexOf('candidates') + 1;
+      const assessmentIdIndex = pathParts.indexOf('assessment') + 1;
+      
+      const candidateId = candidateIdIndex < pathParts.length ? parseInt(pathParts[candidateIdIndex], 10) : 0;
+      const assessmentId = assessmentIdIndex < pathParts.length ? parseInt(pathParts[assessmentIdIndex], 10) : 0;
+      
       return { 
-        id: 0, 
-        title: 'Unavailable Assessment',
-        error: true,
-        questions: []
+        candidateId, 
+        assessmentId,
+        completed: false, 
+        score: 0,
+        answers: []
       };
     } else {
       return [];
@@ -872,6 +1366,111 @@ export const assessmentsApi = {
     } catch (error) {
       console.error('Error in submitAssessmentResponse:', error);
       return null;
+    }
+  },
+  
+  // Candidate Assessment functions
+  getCandidateAssessment: async (candidateId, assessmentId) => {
+    try {
+      const result = await apiCall(`/candidates/${candidateId}/assessment/${assessmentId}`);
+      if (!result || result.error) {
+        console.error(`Failed to fetch assessment ${assessmentId} for candidate ${candidateId}:`, result?.message || 'Unknown error');
+        return { 
+          candidateId, 
+          assessmentId,
+          completed: false, 
+          score: 0,
+          answers: []
+        };
+      }
+      return result;
+    } catch (error) {
+      console.error(`Error fetching assessment ${assessmentId} for candidate ${candidateId}:`, error);
+      return { 
+        candidateId, 
+        assessmentId,
+        completed: false, 
+        score: 0,
+        answers: []
+      };
+    }
+  },
+  
+  getCandidateAssessments: async (candidateId) => {
+    try {
+      const results = await apiCall(`/candidates/${candidateId}/assessment`);
+      
+      // Handle error case
+      if (!results || results.error) {
+        console.error(`Failed to fetch assessments for candidate ${candidateId}:`, results?.message || 'Unknown error');
+        return [];
+      }
+      
+      // Ensure we always return an array
+      if (Array.isArray(results)) {
+        return results;
+      } else if (results.data && Array.isArray(results.data)) {
+        return results.data;
+      } else {
+        console.warn(`Unexpected candidate assessments response format for candidate ${candidateId}:`, results);
+        return [];
+      }
+    } catch (error) {
+      console.error(`Error fetching assessments for candidate ${candidateId}:`, error);
+      return [];
+    }
+  },
+  
+  submitCandidateAssessment: async (candidateId, assessmentId, data) => {
+    try {
+      const result = await apiCall(`/candidates/${candidateId}/assessment/${assessmentId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (result && result.error) {
+        console.error(`Failed to submit assessment ${assessmentId} for candidate ${candidateId}:`, result.message);
+        return null;
+      }
+      return result;
+    } catch (error) {
+      console.error(`Error submitting assessment ${assessmentId} for candidate ${candidateId}:`, error);
+      return null;
+    }
+  },
+  
+  updateCandidateAssessment: async (candidateId, assessmentId, data) => {
+    try {
+      const result = await apiCall(`/candidates/${candidateId}/assessment/${assessmentId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (result && result.error) {
+        console.error(`Failed to update assessment ${assessmentId} for candidate ${candidateId}:`, result.message);
+        return null;
+      }
+      return result;
+    } catch (error) {
+      console.error(`Error updating assessment ${assessmentId} for candidate ${candidateId}:`, error);
+      return null;
+    }
+  },
+  
+  deleteCandidateAssessment: async (candidateId, assessmentId) => {
+    try {
+      const result = await apiCall(`/candidates/${candidateId}/assessment/${assessmentId}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      if (result && result.error) {
+        console.error(`Failed to delete assessment ${assessmentId} for candidate ${candidateId}:`, result.message);
+        return false;
+      }
+      return true;
+    } catch (error) {
+      console.error(`Error deleting assessment ${assessmentId} for candidate ${candidateId}:`, error);
+      return false;
     }
   }
 };

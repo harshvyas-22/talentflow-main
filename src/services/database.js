@@ -5,11 +5,12 @@ import { seedData } from '../data/seedData';
 export const db = new Dexie('talentflow');
 
 // Update the version number to ensure the database is reset with our new fields
-db.version(7).stores({
+db.version(8).stores({
   jobs: '++id, jobId, createdAt, status, order',
   candidates: '++id, createdAt, stage, skills',
   candidateTimeline: '++id, candidateId, timestamp',
   assessments: '++id, createdAt, jobId, candidateId, title',
+  candidateAssessments: '[candidateId+assessmentId], candidateId, assessmentId, submittedAt, completed',
   assessmentResponses: '++id, assessmentId, candidateId, createdAt, completed'
 });
 
