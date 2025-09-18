@@ -18,24 +18,39 @@ async function seedDatabase() {
   try {
     console.log('Seeding database with initial data...');
     
+    // Log initial database state
+    const initialJobCount = await db.jobs.count();
+    const initialCandidateCount = await db.candidates.count();
+    const initialAssessmentCount = await db.assessments.count();
+    
+    console.log('Current database counts:', {
+      jobCount: initialJobCount,
+      candidateCount: initialCandidateCount,
+      assessmentCount: initialAssessmentCount
+    });
+    
     // Make sure all jobs have order properties
     const jobsWithOrder = seedData.jobs.map((job, index) => ({
       ...job,
       order: job.order || index + 1
     }));
     
-    // Use bulkPut instead of bulkAdd to handle duplicates
+    // Seed jobs table
     console.log('Seeding jobs table...');
     await db.jobs.bulkPut(jobsWithOrder);
+    console.log('Jobs table seeded');
     
-    // Use bulkPut instead of bulkAdd to handle duplicates
+    // Seed candidates table
     console.log('Seeding candidates table with 1000 candidates...');
     await db.candidates.bulkPut(seedData.candidates);
+    console.log('Candidates table seeded');
     
+    // Seed assessments table
     if (seedData.assessments && seedData.assessments.length > 0) {
-      // Use bulkPut to add assessments
       console.log('Seeding assessments table...');
+      console.log('Seeding assessments table with data:', seedData.assessments);
       await db.assessments.bulkPut(seedData.assessments);
+      console.log('Assessments table seeded successfully');
     }
     
     // Add timeline entries
@@ -44,10 +59,34 @@ async function seedDatabase() {
       await db.candidateTimeline.bulkPut(seedData.timeline);
     }
     
+    // Verify the data was seeded correctly
+    const jobCount = await db.jobs.count();
+    const candidateCount = await db.candidates.count();
+    const assessmentCount = await db.assessments.count();
+    
+    console.log('Mock database initialized with seed data');
+    console.log('Jobs count:', jobCount);
+    console.log('Candidates count:', candidateCount);
+    console.log('Assessments count:', assessmentCount);
+    
+    // Log a few assessments to verify their structure
+    if (assessmentCount > 0) {
+      const assessments = await db.assessments.limit(3).toArray();
+      console.log('First few assessments:', assessments);
+    }
+    
     console.log('Database seeded successfully');
     return true;
   } catch (error) {
     console.error('Error seeding database:', error);
+    
+    // Try to provide more specific error information
+    if (error.name === 'QuotaExceededError') {
+      console.error('Storage quota exceeded. The database may be too large for this browser.');
+    } else if (error.name === 'InvalidStateError') {
+      console.error('Database is in an invalid state. It may be deleted or not properly initialized.');
+    }
+    
     return false;
   }
 }
@@ -186,4 +225,55 @@ export async function initializeDatabase() {
   }
   
   return false;
+}
+
+// Add a helper function to check database health and contents
+export async function checkDatabaseHealth() {
+  try {
+    if (!db.isOpen()) {
+      console.warn('Database is not open, attempting to open it...');
+      try {
+        await db.open();
+        console.log('Database opened successfully in health check');
+      } catch (openError) {
+        console.error('Failed to open database in health check:', openError);
+        return {
+          isOpen: false,
+          isHealthy: false,
+          tables: [],
+          counts: { jobs: 0, candidates: 0, assessments: 0 }
+        };
+      }
+    }
+    
+    // Get table information
+    const tables = db.tables.map(table => table.name);
+    
+    // Get record counts
+    const jobCount = await db.jobs.count();
+    const candidateCount = await db.candidates.count();
+    const assessmentCount = await db.assessments.count();
+    
+    const isHealthy = tables.length > 0 && (jobCount > 0 || candidateCount > 0);
+    
+    return {
+      isOpen: db.isOpen(),
+      isHealthy,
+      tables,
+      counts: {
+        jobs: jobCount,
+        candidates: candidateCount,
+        assessments: assessmentCount
+      }
+    };
+  } catch (error) {
+    console.error('Error checking database health:', error);
+    return {
+      isOpen: false,
+      isHealthy: false,
+      error: error.message,
+      tables: [],
+      counts: { jobs: 0, candidates: 0, assessments: 0 }
+    };
+  }
 }

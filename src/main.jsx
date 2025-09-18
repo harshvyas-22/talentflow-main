@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
 import { worker } from './services/mockServer.js'
-import { initializeDatabase } from './services/database.js'
+import { initializeDatabase, checkDatabaseHealth } from './services/database.js'
 import { Toaster, toast } from 'react-hot-toast'
 
 // Start the MSW worker and initialize the app
@@ -15,6 +15,19 @@ async function startApp() {
     console.log('Initializing database...');
     dbInitialized = await initializeDatabase();
     console.log('Database initialization status:', dbInitialized ? 'Success' : 'Failed');
+    
+    // Check database health even if initialization reports success
+    const healthCheck = await checkDatabaseHealth();
+    console.log('Database health check:', healthCheck);
+    
+    if (!healthCheck.isHealthy && process.env.NODE_ENV === 'production') {
+      console.warn('Database health check failed but continuing in production mode');
+      setTimeout(() => {
+        toast.warning('Limited data available. Some features may be restricted.', {
+          duration: 5000,
+        });
+      }, 2000);
+    }
     
     if (!dbInitialized && process.env.NODE_ENV === 'production') {
       console.warn('Database initialization failed but continuing in production mode');
