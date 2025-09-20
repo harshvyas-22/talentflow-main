@@ -13,11 +13,19 @@ const JobsList = ({ jobs, isLoading, onEdit, onDelete }) => {
       jobsApi.reorderJob(id, fromOrder, toOrder),
     onSuccess: () => {
       console.log('Reorder API call succeeded, invalidating jobs query');
+      // Force a full refetch by using exact query keys
       queryClient.invalidateQueries(['jobs']);
+      queryClient.invalidateQueries(['jobs', 'all']);
+      queryClient.invalidateQueries(['jobs', 'open']);
+      queryClient.invalidateQueries(['jobs', 'closed']);
+      queryClient.invalidateQueries(['jobs', 'draft']);
+      queryClient.invalidateQueries(['jobs', 'archived']);
     },
     onError: (error) => {
       console.error('Reorder API call failed:', error);
       // Optionally, you could implement a rollback of the optimistic update here
+      alert('Failed to save the new order. Please try again.');
+      queryClient.invalidateQueries(['jobs']);
     }
   });
 

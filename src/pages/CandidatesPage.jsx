@@ -17,7 +17,7 @@ const CandidatesPage = () => {
   const [viewMode, setViewMode] = useState('kanban');
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [stageFilter, setStageFilter] = useState('');
+  const [stageFilter, setStageFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [kanbanItemsPerPage] = useState(15); // Limit for kanban view - show 15 candidates per stage
@@ -37,10 +37,10 @@ const CandidatesPage = () => {
     queryKey: ['candidates', { search: searchQuery, stage: stageFilter, viewMode, page: currentPage, itemsPerPage: viewMode === 'list' ? itemsPerPage : kanbanItemsPerPage }],
     queryFn: () => candidatesApi.getCandidates({ 
       search: searchQuery,
-      stage: stageFilter,
+      stage: stageFilter !== 'all' ? stageFilter : undefined,
       page: currentPage,
       pageSize: viewMode === 'list' ? itemsPerPage : (viewMode === 'kanban' ? kanbanItemsPerPage * stagesList.length : undefined),
-      all: false // Don't get all candidates anymore
+      all: viewMode === 'kanban' // Get all candidates for kanban view
     })
   });
 
@@ -80,7 +80,7 @@ const CandidatesPage = () => {
 
   // Stage filter options
   const stageOptions = [
-    { value: '', label: 'All Stages' },
+    { value: 'all', label: 'All Stages' },
     { value: STAGES.APPLIED, label: 'Applied' },
     { value: STAGES.SCREEN, label: 'Screening' },
     { value: STAGES.TECH, label: 'Technical' },
@@ -168,7 +168,7 @@ const CandidatesPage = () => {
           </>
         ) : (
           <>
-            {/* Show filter dropdown only in list view */}
+            {/* Show filter dropdown for both views */}
             <div className="mb-4 flex justify-end">
               <FilterDropdown
                 label="Stage"
@@ -177,7 +177,7 @@ const CandidatesPage = () => {
                 options={stageOptions}
               />
             </div>
-            <CandidatesList 
+            <CandidatesKanban 
               candidates={candidates?.candidates || []} 
               isLoading={isLoading} 
             />

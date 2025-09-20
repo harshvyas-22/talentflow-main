@@ -126,7 +126,18 @@ async function handleIndexedDBFallback(endpoint, options = {}) {
     // Parse path and query string
     const questionMarkIndex = normalizedEndpoint.indexOf('?');
     const pathPart = questionMarkIndex >= 0 ? normalizedEndpoint.substring(0, questionMarkIndex) : normalizedEndpoint;
+    const queryString = questionMarkIndex >= 0 ? normalizedEndpoint.substring(questionMarkIndex + 1) : '';
     const path = pathPart.split('/').filter(segment => segment); // Remove empty segments
+    
+    // Parse query parameters
+    const queryParams = {};
+    if (queryString) {
+      const searchParams = new URLSearchParams(queryString);
+      for (const [key, value] of searchParams.entries()) {
+        queryParams[key] = value;
+      }
+      console.log('Parsed query parameters:', queryParams);
+    }
     
     // Extract resource and ID
     const resource = path.length > 0 ? path[0] : 'jobs'; // Default to jobs if not specified
@@ -149,8 +160,20 @@ async function handleIndexedDBFallback(endpoint, options = {}) {
             console.log(`Found ${jobCount} jobs in IndexedDB`);
             
             if (jobCount > 0) {
-              const jobs = await db.jobs.toArray();
+              // Get all jobs first
+              let jobs = await db.jobs.toArray();
               console.log(`Retrieved ${jobs.length} jobs from IndexedDB`);
+              
+              // Apply filters based on query parameters
+              if (queryParams.status && queryParams.status !== 'all') {
+                console.log(`Filtering jobs by status: ${queryParams.status}`);
+                jobs = jobs.filter(job => job.status === queryParams.status);
+                console.log(`After status filter: ${jobs.length} jobs remaining`);
+              }
+              
+              // Sort by order for consistent display
+              jobs.sort((a, b) => (a.order || 0) - (b.order || 0));
+              
               return jobs;
             } else {
               console.log('No jobs found in IndexedDB, returning empty array');
@@ -263,14 +286,22 @@ async function handleIndexedDBFallback(endpoint, options = {}) {
           return { error: true, message: 'Failed to delete job from IndexedDB' };
         }
       }
-      else if (method === 'PATCH' && endpoint.includes('/reorder')) {
+      else if ((method === 'PATCH' || method === 'PUT') && (endpoint.includes('/reorder') || path.length >= 3 && path[2] === 'reorder')) {
         try {
           // Reorder job
           if (!id) {
             return { error: true, message: 'Job ID is required for reordering' };
           }
           
-          const reorderData = JSON.parse(options.body);
+          // Make sure we can parse the body
+          let reorderData;
+          try {
+            reorderData = JSON.parse(options.body);
+          } catch (parseError) {
+            console.error('Error parsing reorder data:', parseError, options.body);
+            return { error: true, message: 'Invalid reorder data format' };
+          }
+          
           const { fromOrder, toOrder } = reorderData;
           
           console.log(`Reordering job ${id} from ${fromOrder} to ${toOrder} in IndexedDB`);
@@ -284,7 +315,17 @@ async function handleIndexedDBFallback(endpoint, options = {}) {
           // Update all affected jobs
           const allJobs = await db.jobs.toArray();
           
-          // Update the orders
+          // First ensure all jobs have an order property
+          allJobs.forEach((job, idx) => {
+            if (!job.order || isNaN(job.order)) {
+              job.order = idx + 1;
+            }
+          });
+          
+          // Sort by current order
+          allJobs.sort((a, b) => a.order - b.order);
+          
+          // Update the orders based on the drag operation
           for (const job of allJobs) {
             if (job.id === parseInt(id)) {
               // This is the job we're moving
@@ -322,13 +363,21 @@ async function handleIndexedDBFallback(endpoint, options = {}) {
             if (candidateCount > 0) {
               // Handle pagination if present in the query params
               const urlParams = new URLSearchParams(endpoint.includes('?') ? endpoint.split('?')[1] : '');
-              const page = parseInt(urlParams.get('page') || '1', 10);
-              const pageSize = parseInt(urlParams.get('pageSize') || '20', 10);
+              const page = parseInt(urlParams.get('page') || queryParams.page || '1', 10);
+              const pageSize = parseInt(urlParams.get('pageSize') || queryParams.pageSize || '20', 10);
               
-              const allCandidates = await db.candidates.toArray();
+              let allCandidates = await db.candidates.toArray();
+              
+              // Apply filters from query parameters
+              if (queryParams.stage && queryParams.stage !== 'all') {
+                console.log(`Filtering candidates by stage: ${queryParams.stage}`);
+                allCandidates = allCandidates.filter(candidate => candidate.stage === queryParams.stage);
+                console.log(`After stage filter: ${allCandidates.length} candidates remaining`);
+              }
+              
               const total = allCandidates.length;
               
-              if (urlParams.get('all') === 'true') {
+              if (urlParams.get('all') === 'true' || queryParams.all === 'true') {
                 return allCandidates;
               }
               
