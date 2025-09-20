@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Users, Briefcase, ClipboardList, Menu, X } from 'lucide-react';
+import { Users, Briefcase, ClipboardList, Menu, X, Home } from 'lucide-react';
 
 const Layout = ({ children }) => {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navigation = [
+    { name: 'Home', href: '/', icon: Home },
     { name: 'Jobs', href: '/jobs', icon: Briefcase },
     { name: 'Candidates', href: '/candidates', icon: Users },
     { name: 'Assessments', href: '/assessments', icon: ClipboardList }

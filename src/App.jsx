@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
+import HomePage from './pages/HomePage';
 import JobsPage from './pages/JobsPage';
 import JobDetailPage from './pages/JobDetailPage';
 import CandidatesPage from './pages/CandidatesPage';
@@ -39,7 +40,11 @@ function App() {
       <BrowserRouter>
         <Layout>
           <Routes>
-            <Route path="/" element={<Navigate to="/jobs" replace />} />
+            <Route path="/" element={
+              <ErrorBoundary>
+                <HomePage />
+              </ErrorBoundary>
+            } />
             <Route path="/jobs" element={
               <ErrorBoundary>
                 <JobsPage />
