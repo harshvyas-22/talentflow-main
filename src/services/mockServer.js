@@ -365,12 +365,16 @@ export const handlers = [
       
       // Add timeline entry for stage changes
       if (updates.stage) {
-        await db.candidateTimeline.add({
+        const timelineEntry = {
+          id: Date.now(),
           candidateId,
           stage: updates.stage,
           timestamp: new Date().toISOString(),
           notes: updates.rejectionReason || `Moved to ${updates.stage}`
-        });
+        };
+        
+        await db.candidateTimeline.add(timelineEntry);
+        console.log(`Added timeline entry for candidate ${candidateId} stage change:`, timelineEntry);
       }
       
       // Fetch and return the updated candidate
@@ -578,9 +582,27 @@ export const handlers = [
     
     const { id } = params;
     try {
-      const timeline = await db.candidateTimeline
-        .filter(item => item.candidateId === parseInt(id))
+      // Parse id to integer for proper comparison
+      const candidateId = parseInt(id);
+      
+      // Make sure we're filtering by candidateId
+      let timeline = await db.candidateTimeline
+        .where('candidateId')
+        .equals(candidateId)
         .toArray();
+      
+      // Filter out any objects that don't look like proper timeline entries
+      // Timeline entries must have timestamp and either notes or stage change
+      timeline = timeline.filter(entry => 
+        entry && 
+        typeof entry === 'object' && 
+        entry.timestamp && 
+        (entry.notes || entry.stage) &&
+        entry.candidateId === candidateId
+      );
+      
+      // Log for debugging
+      console.log(`Found ${timeline.length} valid timeline entries for candidate ${candidateId}`);
       
       // Sort manually since IndexedDB doesn't support orderBy
       timeline.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
@@ -1320,3 +1342,41 @@ export async function initializeMockDb() {
 
 // Initialize the mock database when this module is imported
 initializeMockDb();
+
+// Add a function to clean up any corrupt timeline entries
+async function cleanupCandidateTimeline() {
+  try {
+    console.log('Checking for corrupt timeline entries...');
+    
+    // Get all timeline entries
+    const allEntries = await db.candidateTimeline.toArray();
+    console.log(`Found ${allEntries.length} total timeline entries`);
+    
+    // Identify entries that look like candidate objects instead of timeline entries
+    const invalidEntries = allEntries.filter(entry => 
+      entry && 
+      typeof entry === 'object' && 
+      (!entry.timestamp || (!entry.notes && !entry.stage)) &&
+      entry.name && entry.email // These are likely candidate objects
+    );
+    
+    if (invalidEntries.length > 0) {
+      console.log(`Found ${invalidEntries.length} invalid timeline entries to delete`);
+      
+      // Delete invalid entries
+      for (const entry of invalidEntries) {
+        console.log(`Deleting invalid timeline entry:`, entry);
+        await db.candidateTimeline.delete(entry.id);
+      }
+      
+      console.log('Cleanup completed');
+    } else {
+      console.log('No corrupt timeline entries found');
+    }
+  } catch (error) {
+    console.error('Error cleaning up timeline entries:', error);
+  }
+}
+
+// Run the cleanup function
+cleanupCandidateTimeline();
