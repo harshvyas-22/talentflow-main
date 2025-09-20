@@ -151,21 +151,7 @@ const HomePage = () => {
       {/* Call to Action */}
       <div className="bg-gray-50 rounded-lg p-8 text-center">
         <h2 className="text-2xl font-semibold mb-3">Ready to transform your hiring process?</h2>
-        <p className="text-gray-600 mb-6">Explore TalentFlow's powerful features and see how we can help streamline your recruitment workflow.</p>
-        <div className="flex justify-center space-x-4">
-          <button 
-            className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-300"
-            onClick={() => window.location.href = '/jobs'}
-          >
-            View Jobs
-          </button>
-          <button 
-            className="px-6 py-3 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition duration-300"
-            onClick={() => window.location.href = '/candidates'}
-          >
-            View Candidates
-          </button>
-        </div>
+        <p className="text-gray-600">Explore TalentFlow's powerful features and see how we can help streamline your recruitment workflow.</p>
       </div>
     </div>
   );

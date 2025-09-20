@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Users, Briefcase, ClipboardList, Menu, X, Home } from 'lucide-react';
+import Footer from './Footer';
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -20,7 +21,7 @@ const Layout = ({ children }) => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <nav className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
@@ -98,9 +99,11 @@ const Layout = ({ children }) => {
         )}
       </nav>
       
-      <main className="mx-auto py-4 px-4 sm:px-6 lg:px-6">
+      <main className="flex-grow mx-auto w-full max-w-7xl py-4 px-4 sm:px-6 lg:px-6">
         {children}
       </main>
+
+      <Footer />
     </div>
   );
 };
