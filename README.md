@@ -1,59 +1,213 @@
 # TalentFlow
 
-TalentFlow is a modern recruiting and talent management application designed to streamline the hiring process. It provides a comprehensive suite of tools for managing candidates, jobs, and assessments in a single, intuitive interface.
+TalentFlow is a modern recruiting and talent management platform designed to streamline the hiring process from job posting to candidate assessment.
 
-![TalentFlow Dashboard](./screenshots/dashboard.png)
+
+## Overview
+
+TalentFlow provides a comprehensive suite of integrated tools for talent acquisition teams:
+
+- **Intuitive Dashboard** for at-a-glance recruiting metrics
+- **Kanban & List Views** for flexible candidate management
+- **Job Posting Management** with customizable requirements
+- **Assessment Builder** for skills evaluation
+- **Interactive Timeline** for candidate history tracking
 
 ## Application Screenshots
 
-### Home Page
-![Home Page](./screenshots/homepage.png)
+### Dashboard & Homepage
+<p align="center">
+  <img src="./screenshots/homepage.png" alt="TalentFlow Homepage" width="100%">
+</p>
 
-## Features
+## Key Features
 
-### Candidate Management
-- **Kanban Board**: Visualize and manage candidates through different stages of the hiring process
-- **Candidate Cards**: View essential candidate information at a glance
-- **Notes System**: Add and track notes for candidates with @mention functionality
-- **Interview Scheduling**: Schedule and track candidate interviews
-- **Timeline View**: See a chronological history of candidate interactions
-- **Skills Tracking**: Track and filter candidates by their skillsets
+### 1. Candidate Management
 
-#### Candidate Kanban Board
-![Candidate Kanban Board](./screenshots/candidatekanbanboard.png)
+Easily track candidates through every stage of your hiring pipeline with flexible views and powerful filtering tools.
 
-#### Candidate List View
-![Candidate List View](./screenshots/candidatenormalmode.png)
+<div align="center">
+  <img src="./screenshots/candidatekanbanboard.png" alt="Candidate Kanban Board" width="85%">
+  <p><em>Kanban Board: Visualize candidates across hiring stages</em></p>
+</div>
 
-#### Add New Candidate
-![Add New Candidate](./screenshots/newcandidateadd.png)
+<div align="center">
+  <img src="./screenshots/candidatenormalmode.png" alt="Candidate List View" width="85%">
+  <p><em>List View: Sort and filter candidates efficiently</em></p>
+</div>
 
-### Job Management
-- **Job Listings**: Create and manage job openings
-- **Job Details**: Track applications and progress for each position
-- **Filtering & Sorting**: Easily find the right jobs based on various criteria
-- **Drag and Drop Reordering**: Prioritize job listings with intuitive drag and drop
+<div align="center">
+  <img src="./screenshots/newcandidateadd.png" alt="Add New Candidate" width="85%">
+  <p><em>Candidate Form: Collect comprehensive candidate information</em></p>
+</div>
 
-#### Jobs Board
-![Jobs Board](./screenshots/jobsboard.png)
+**Features include:**
+- Drag-and-drop stage management
+- Customizable candidate cards
+- @mention-enabled notes system
+- Timeline view for activity history
+- Skills-based filtering and search
+- Interview scheduling tools
 
-#### Create New Job
-![Create New Job](./screenshots/createnewjob.png)
+### 2. Job Management
 
-#### Job Details
-![Job Details](./screenshots/createjob.png)
+Create, organize, and track job postings with comprehensive details and applicant tracking.
 
-### Assessment Builder
-- **Custom Assessments**: Create tailored assessments for different positions
-- **Question Editor**: Build various types of questions for your assessments
-- **Assessment Preview**: Review how assessments will appear to candidates
-- **Multiple Question Types**: Support for multiple-choice and free text responses
+<div align="center">
+  <img src="./screenshots/jobsboard.png" alt="Jobs Board" width="85%">
+  <p><em>Jobs Dashboard: Track all open positions</em></p>
+</div>
 
-#### Assessment Board
-![Assessment Board](./screenshots/assementboard.png)
+<div align="center">
+  <img src="./screenshots/createnewjob.png" alt="Create New Job" width="85%">
+  <p><em>Job Creation Form: Define detailed position requirements</em></p>
+</div>
 
-#### Create New Assessment
-![Create New Assessment](./screenshots/createnewassement.png)
+<div align="center">
+  <img src="./screenshots/createjob.png" alt="Job Details" width="85%">
+  <p><em>Job Details: View complete job information</em></p>
+</div>
+
+**Features include:**
+- Comprehensive job listing management
+- Status tracking (Open, Filled, On Hold)
+- Customizable job requirements
+- Applicant tracking and progression
+- Advanced filtering and search capabilities
+- Drag-and-drop priority ordering
+
+### 3. Assessment Builder
+
+Create customized assessments to evaluate candidate skills and qualifications.
+
+<div align="center">
+  <img src="./screenshots/assementboard.png" alt="Assessment Board" width="85%">
+  <p><em>Assessment Dashboard: Manage all your assessment templates</em></p>
+</div>
+
+<div align="center">
+  <img src="./screenshots/createnewassement.png" alt="Create New Assessment" width="85%">
+  <p><em>Assessment Builder: Create customized evaluation tools</em></p>
+</div>
+
+**Features include:**
+- Multiple question formats (multiple choice, text)
+- Customizable scoring systems
+- Preview mode for testing assessments
+- Candidate-specific assessment assignment
+- Results tracking and analysis
+
+## Tech Stack
+
+TalentFlow leverages modern web technologies for performance and flexibility:
+
+- **Frontend**: React 18 with functional components and hooks
+- **Build System**: Vite for lightning-fast development
+- **Styling**: Tailwind CSS for responsive design
+- **State Management**: React Query for server state, local React state
+- **Data Storage**: IndexedDB via Dexie.js for client-side persistence
+- **Mock Backend**: MSW (Mock Service Worker) for API simulation
+- **UI Components**: Custom component library with Lucide icons
+- **Drag and Drop**: @hello-pangea/dnd for intuitive interactions
+
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js (v16+)
+- npm or yarn
+
+### Quick Start
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/talentflow.git
+   cd talentflow
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Start the development server**
+   ```bash
+   npm run dev
+   ```
+
+4. **Open your browser**
+   Navigate to `http://localhost:5173`
+
+### Available Scripts
+
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm run lint` - Run ESLint
+- `npm run preview` - Preview production build
+
+## 🧰 Project Structure
+
+```
+src/
+├── components/     # Reusable UI components
+│   ├── assessments/ # Assessment-related components
+│   ├── candidates/  # Candidate management components
+│   ├── jobs/        # Job listing components
+│   └── ui/          # Core UI elements
+├── data/          # Seed data for development
+├── pages/         # Route-based page components
+├── services/      # API and data management
+└── main.jsx       # Application entry point
+```
+
+## 📊 Working with Mock Data
+
+TalentFlow uses MSW to simulate a backend API with data stored in IndexedDB:
+
+- Full application workflow without requiring a real backend
+- Persistent data between browser sessions
+- Realistic API behavior with configurable latency
+
+To reset data, clear your browser's IndexedDB storage through developer tools.
+
+## 🤝 Contributing
+
+We welcome contributions! Please follow these steps:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+Please follow our coding standards and include appropriate tests.
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgements
+
+- [React](https://reactjs.org/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [Vite](https://vitejs.dev/)
+- [Mock Service Worker](https://mswjs.io/)
+- [Dexie.js](https://dexie.org/)
+- [React Query](https://tanstack.com/query)
+- [React Router](https://reactrouter.com/)
+- [Lucide Icons](https://lucide.dev/)
+
+## 🔮 Future Roadmap
+
+- Enhanced analytics dashboard
+- Email notification system
+- Calendar integration
+- Mobile application
+- Dark mode support
+- Advanced reporting tools
+
+## 📞 Support
+
+If you encounter any issues or have questions, please [open an issue](https://github.com/yourusername/talentflow/issues) or contact our support team.
 
 ## Tech Stack
 
