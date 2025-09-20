@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "postbuild": "cp public/_redirects dist/ && cp render.json dist/ && cp vercel.json dist/",
     "lint": "eslint .",
     "preview": "vite preview"
   },

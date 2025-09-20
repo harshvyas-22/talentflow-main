@@ -20,7 +20,7 @@ async function apiCall(endpoint, options = {}) {
     console.log(`API call to ${apiEndpoint}`, options);
     
     // In production, we'll bypass the actual API call and go straight to IndexedDB
-    if (process.env.NODE_ENV === 'production') {
+    if (isProduction) {
       console.log(`Production mode detected, using IndexedDB fallback for ${endpoint}`);
       
       try {
@@ -52,7 +52,7 @@ async function apiCall(endpoint, options = {}) {
     // Check if response is ok
     if (!response.ok) {
       // If we get a 404 in production, we should fall back to IndexedDB
-      if (response.status === 404 && process.env.NODE_ENV === 'production') {
+      if (response.status === 404 && isProduction) {
         console.log(`Got 404 for ${endpoint}, falling back to IndexedDB`);
         return await handleIndexedDBFallback(endpoint, options);
       }
@@ -80,7 +80,7 @@ async function apiCall(endpoint, options = {}) {
       console.warn(`Endpoint ${endpoint} returned non-JSON response: ${contentType}`);
       
       // If we're in production, fall back to IndexedDB
-      if (process.env.NODE_ENV === 'production') {
+      if (isProduction) {
         console.log(`Non-JSON response in production, falling back to IndexedDB for ${endpoint}`);
         return await handleIndexedDBFallback(endpoint, options);
       }
@@ -95,7 +95,7 @@ async function apiCall(endpoint, options = {}) {
     console.error(`API Error (${endpoint}):`, error);
     
     // In case of network errors in production, fall back to IndexedDB
-    if (process.env.NODE_ENV === 'production') {
+    if (isProduction) {
       console.log(`Network error in production, falling back to IndexedDB for ${endpoint}`);
       return await handleIndexedDBFallback(endpoint, options);
     }
