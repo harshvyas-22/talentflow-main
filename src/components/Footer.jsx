@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Github, Linkedin, Twitter, Mail, Heart, ClipboardList } from 'lucide-react';
+import { Github, Linkedin, Mail, Heart, ClipboardList } from 'lucide-react';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -21,14 +21,14 @@ const Footer = () => {
               Streamlining the hiring process with intelligent candidate tracking and assessment tools.
             </p>
             <div className="flex space-x-4">
-              <a href="https://github.com" target="_blank" rel="noopener noreferrer" aria-label="GitHub" className="text-gray-500 hover:text-gray-800">
+              <a href="https://github.com/harshvyas-22" target="_blank" rel="noopener noreferrer" aria-label="GitHub" className="text-gray-500 hover:text-gray-800">
                 <Github size={20} />
               </a>
-              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="text-gray-500 hover:text-gray-800">
+              <a href="https://www.linkedin.com/in/harsh-vyas-22abc/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn" className="text-gray-500 hover:text-gray-800">
                 <Linkedin size={20} />
               </a>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" aria-label="Twitter" className="text-gray-500 hover:text-gray-800">
-                <Twitter size={20} />
+              <a href="mailto:harshvyas98397916@gmail.com" aria-label="Email" className="text-gray-500 hover:text-gray-800">
+                <Mail size={20} />
               </a>
             </div>
           </div>
@@ -99,9 +99,9 @@ const Footer = () => {
             <p className="text-gray-600 text-sm mb-2">
               Have questions? We're here to help!
             </p>
-            <a href="mailto:contact@talentflow.com" className="flex items-center text-blue-600 hover:text-blue-800">
+            <a href="mailto:harshvyas98397916@gmail.com" className="flex items-center text-blue-600 hover:text-blue-800">
               <Mail size={16} className="mr-2" />
-              contact@talentflow.com
+              harshvyas98397916@gmail.com
             </a>
           </div>
         </div>
