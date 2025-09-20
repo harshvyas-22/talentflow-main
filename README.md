@@ -2,7 +2,12 @@
 
 TalentFlow is a modern recruiting and talent management application designed to streamline the hiring process. It provides a comprehensive suite of tools for managing candidates, jobs, and assessments in a single, intuitive interface.
 
-![TalentFlow Dashboard](https://via.placeholder.com/800x400?text=TalentFlow+Dashboard)
+![TalentFlow Dashboard](./screenshots/dashboard.png)
+
+## Application Screenshots
+
+### Home Page
+![Home Page](./screenshots/homepage.png)
 
 ## Features
 
@@ -14,17 +19,41 @@ TalentFlow is a modern recruiting and talent management application designed to 
 - **Timeline View**: See a chronological history of candidate interactions
 - **Skills Tracking**: Track and filter candidates by their skillsets
 
+#### Candidate Kanban Board
+![Candidate Kanban Board](./screenshots/candidatekanbanboard.png)
+
+#### Candidate List View
+![Candidate List View](./screenshots/candidatenormalmode.png)
+
+#### Add New Candidate
+![Add New Candidate](./screenshots/newcandidateadd.png)
+
 ### Job Management
 - **Job Listings**: Create and manage job openings
 - **Job Details**: Track applications and progress for each position
 - **Filtering & Sorting**: Easily find the right jobs based on various criteria
 - **Drag and Drop Reordering**: Prioritize job listings with intuitive drag and drop
 
+#### Jobs Board
+![Jobs Board](./screenshots/jobsboard.png)
+
+#### Create New Job
+![Create New Job](./screenshots/createnewjob.png)
+
+#### Job Details
+![Job Details](./screenshots/createjob.png)
+
 ### Assessment Builder
 - **Custom Assessments**: Create tailored assessments for different positions
 - **Question Editor**: Build various types of questions for your assessments
 - **Assessment Preview**: Review how assessments will appear to candidates
 - **Multiple Question Types**: Support for multiple-choice and free text responses
+
+#### Assessment Board
+![Assessment Board](./screenshots/assementboard.png)
+
+#### Create New Assessment
+![Create New Assessment](./screenshots/createnewassement.png)
 
 ## Tech Stack
 
