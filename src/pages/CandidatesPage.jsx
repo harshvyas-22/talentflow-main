@@ -192,7 +192,7 @@ const CandidatesPage = () => {
                 options={stageOptions}
               />
             </div>
-            <CandidatesKanban 
+            <CandidatesList 
               candidates={candidates?.candidates || []} 
               isLoading={isLoading} 
             />
