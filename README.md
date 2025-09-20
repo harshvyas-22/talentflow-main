@@ -64,7 +64,7 @@ Create, organize, and track job postings with comprehensive details and applican
 </div>
 
 <div align="center">
-  <img src="./screenshots/createjob.png" alt="Job Details" width="85%">
+  <img src="./screenshots/jobdetail.png" alt="Job Details" width="85%">
   <p><em>Job Details: View complete job information</em></p>
 </div>
 
