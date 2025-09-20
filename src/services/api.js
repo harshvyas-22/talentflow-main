@@ -368,6 +368,13 @@ async function handleIndexedDBFallback(endpoint, options = {}) {
               
               let allCandidates = await db.candidates.toArray();
               
+              // Ensure each candidate has a valid stage
+              allCandidates = allCandidates.map(candidate => ({
+                ...candidate,
+                // Set default stage to 'applied' if missing or invalid
+                stage: candidate.stage || 'applied'
+              }));
+              
               // Apply filters from query parameters
               if (queryParams.stage && queryParams.stage !== 'all') {
                 console.log(`Filtering candidates by stage: ${queryParams.stage}`);
@@ -378,11 +385,13 @@ async function handleIndexedDBFallback(endpoint, options = {}) {
               const total = allCandidates.length;
               
               if (urlParams.get('all') === 'true' || queryParams.all === 'true') {
-                return allCandidates;
+                return { candidates: allCandidates, pagination: { page: 1, pageSize: total, total, totalPages: 1 } };
               }
               
               const startIndex = (page - 1) * pageSize;
               const paginatedCandidates = allCandidates.slice(startIndex, startIndex + pageSize);
+              
+              console.log(`Returning ${paginatedCandidates.length} candidates for page ${page}`);
               
               return {
                 candidates: paginatedCandidates,
@@ -395,7 +404,15 @@ async function handleIndexedDBFallback(endpoint, options = {}) {
               };
             } else {
               console.log('No candidates found in IndexedDB, returning empty array');
-              return { candidates: [], pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 } };
+              return { 
+                candidates: [], 
+                pagination: { 
+                  page: 1, 
+                  pageSize: 20, 
+                  total: 0, 
+                  totalPages: 0 
+                } 
+              };
             }
           }
         } catch (candidateError) {

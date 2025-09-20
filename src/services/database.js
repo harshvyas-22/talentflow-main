@@ -43,7 +43,15 @@ async function seedDatabase() {
     
     // Seed candidates table
     console.log('Seeding candidates table with 1000 candidates...');
-    await db.candidates.bulkPut(seedData.candidates);
+    
+    // Ensure all candidates have a valid stage
+    const candidatesWithStages = seedData.candidates.map(candidate => ({
+      ...candidate,
+      // Set default stage to 'applied' if missing
+      stage: candidate.stage || 'applied'
+    }));
+    
+    await db.candidates.bulkPut(candidatesWithStages);
     console.log('Candidates table seeded');
     
     // Seed assessments table

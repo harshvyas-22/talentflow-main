@@ -16,7 +16,7 @@ const KANBAN_STAGES = [
   { key: STAGES.REJECTED, label: 'Rejected', color: 'bg-red-100 border-red-300' },
 ];
 
-const CandidatesKanban = ({ candidatesByStage, isLoading }) => {
+const CandidatesKanban = ({ candidatesByStage = {}, isLoading }) => {
   const queryClient = useQueryClient();
 
   // Mutation for updating a candidate's stage
@@ -275,18 +275,28 @@ const CandidatesKanban = ({ candidatesByStage, isLoading }) => {
   const handleDragEnd = (result) => {
     const { destination, source, draggableId } = result;
 
+    // Safety checks
     if (!destination) return;
     if (destination.droppableId === source.droppableId) return;
+    if (!draggableId) return;
 
-    const candidateId = parseInt(draggableId);
+    let candidateId;
+    try {
+      candidateId = parseInt(draggableId, 10);
+      if (isNaN(candidateId)) return;
+    } catch (e) {
+      console.error('Invalid draggableId:', draggableId);
+      return;
+    }
+
     const newStage = destination.droppableId;
 
     // Optimistic update
     queryClient.setQueryData(['candidates'], (oldData) => {
-      if (!oldData) return oldData;
+      if (!oldData || !oldData.candidates || !Array.isArray(oldData.candidates)) return oldData;
 
       const updatedCandidates = oldData.candidates.map(candidate =>
-        candidate.id === candidateId
+        candidate && candidate.id === candidateId
           ? { ...candidate, stage: newStage }
           : candidate
       );
@@ -421,7 +431,7 @@ const CandidatesKanban = ({ candidatesByStage, isLoading }) => {
                         {(candidatesByStage[stage.key] || []).map((candidate, index) => (
                           <Draggable
                             key={candidate.id}
-                            draggableId={candidate.id.toString()}
+                            draggableId={String(candidate.id)}
                             index={index}
                           >
                             {(provided, snapshot) => (

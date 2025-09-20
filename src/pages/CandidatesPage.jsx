@@ -52,18 +52,33 @@ const CandidatesPage = () => {
 
   // Group candidates by stage
   const candidatesByStage = React.useMemo(() => {
-    if (!candidates?.candidates) return {};
+    if (!candidates?.candidates || !Array.isArray(candidates.candidates)) {
+      // Return an empty object with all stage keys initialized to empty arrays
+      return stagesList.reduce((acc, stage) => {
+        acc[stage] = [];
+        return acc;
+      }, {});
+    }
     
+    // Initialize with empty arrays for all stages
+    const initialStages = stagesList.reduce((acc, stage) => {
+      acc[stage] = [];
+      return acc;
+    }, {});
+    
+    // Group candidates by stage
     return candidates.candidates.reduce((acc, candidate) => {
       // Ensure the stage is one of the valid stages
-      const stage = candidate.stage || 'applied';
+      const stage = candidate.stage && stagesList.includes(candidate.stage) 
+        ? candidate.stage 
+        : STAGES.APPLIED;
       
       if (!acc[stage]) {
         acc[stage] = [];
       }
       acc[stage].push(candidate);
       return acc;
-    }, {});
+    }, initialStages);
   }, [candidates]);
 
   const handleAddCandidate = async (candidateData) => {
