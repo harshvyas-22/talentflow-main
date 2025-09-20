@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   User, Mail, Phone, Building, Briefcase, 
-  X, MoreVertical, MessageSquare, AtSign, Info
+  X, AtSign, MessageSquare
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { candidatesApi } from '../../services/api';
@@ -10,8 +10,7 @@ import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
 import { toast } from 'react-hot-toast';
 
-const CandidateCard = ({ candidate, compact, onDeleteNote }) => {
-  const [activeTab, setActiveTab] = useState('info'); // 'info', 'notes'
+const CandidateCard = ({ candidate, compact, onAddNote, onDeleteNote }) => {
   const [notesText, setNotesText] = useState('');
   const [showMentionSuggestions, setShowMentionSuggestions] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
@@ -22,7 +21,7 @@ const CandidateCard = ({ candidate, compact, onDeleteNote }) => {
   const { data: timeline, isLoading: isTimelineLoading } = useQuery({
     queryKey: ['candidateTimeline', candidate.id],
     queryFn: () => candidatesApi.getCandidateTimeline(candidate.id),
-    enabled: activeTab === 'notes' // Only fetch when notes tab is active
+    enabled: !!candidate.id // Only fetch when we have a candidate ID
   });
 
   // Get list of candidates for @mention suggestions
@@ -96,7 +95,7 @@ const CandidateCard = ({ candidate, compact, onDeleteNote }) => {
     setShowMentionSuggestions(false);
   };
 
-  // Submit a note from the Notes tab
+  // Submit a note
   const submitNote = () => {
     if (notesText.trim()) {
       onAddNote?.(candidate.id, notesText);
@@ -206,123 +205,90 @@ const CandidateCard = ({ candidate, compact, onDeleteNote }) => {
         )}
       </div>
 
-      {/* Tabs */}
-      <div className="mt-3 border-b border-gray-200">
-        <nav className="flex -mb-px space-x-4 overflow-x-auto" aria-label="Tabs">
-          <button
-            onClick={() => setActiveTab('info')}
-            className={`${
-              activeTab === 'info'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            } flex items-center whitespace-nowrap py-2 px-1 border-b-2 font-medium text-xs`}
-          >
-            <Info className="w-3 h-3 mr-1" />
-            Information
-          </button>
-          <button
-            onClick={() => setActiveTab('notes')}
-            className={`${
-              activeTab === 'notes'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            } flex items-center whitespace-nowrap py-2 px-1 border-b-2 font-medium text-xs`}
-          >
-            <MessageSquare className="w-3 h-3 mr-1" />
-            Notes
-          </button>
-        </nav>
-      </div>
-
-      {/* Tab Content */}
-      <div className="mt-2">
-        {activeTab === 'info' && (
-          <>
-            {/* Action buttons removed as requested */}
-          </>
-        )}
-
-        {activeTab === 'notes' && (
-          <div className="space-y-3">
-            <div className="relative">
-              <Textarea
-                ref={textareaRef}
-                value={notesText}
-                onChange={handleNotesChange}
-                placeholder="Type @ to mention a candidate..."
-                rows={3}
-                className="w-full text-sm resize-none"
-              />
-              
-              {/* @mentions suggestions dropdown */}
-              {showMentionSuggestions && filteredCandidates.length > 0 && (
-                <div className="absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
-                  {filteredCandidates.map((c) => (
-                    <div
-                      key={c.id}
-                      onClick={() => insertMention(c)}
-                      className="cursor-pointer hover:bg-gray-100 px-4 py-2 flex items-center"
-                    >
-                      <AtSign className="w-3 h-3 mr-2 text-gray-500" />
-                      {c.name}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+      {/* Notes Section - Kept as requested */}
+      <div className="mt-3 border-t border-gray-200 pt-3">
+        <div className="flex items-center gap-2 mb-2">
+          <MessageSquare className="w-4 h-4 text-gray-500" />
+          <h4 className="text-xs font-medium text-gray-700">Notes</h4>
+        </div>
+        
+        <div className="space-y-3">
+          <div className="relative">
+            <Textarea
+              ref={textareaRef}
+              value={notesText}
+              onChange={handleNotesChange}
+              placeholder="Type @ to mention a candidate..."
+              rows={3}
+              className="w-full text-sm resize-none"
+            />
             
-            <Button
-              size="sm"
-              onClick={submitNote}
-              className="w-full"
-            >
-              Add Note
-            </Button>
-            
-            {/* Notes History */}
-            <div className="mt-2">
-              <h4 className="text-xs font-medium text-gray-500 mb-2">Recent Notes</h4>
-              {isTimelineLoading ? (
-                <div className="text-center py-2">
-                  <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-blue-500 border-r-transparent"></div>
-                </div>
-              ) : timeline && timeline.length > 0 ? (
-                <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {timeline
-                    .filter(item => item.notes)
-                    .map(item => (
-                      <div key={item.id} className="text-xs p-2 bg-gray-50 rounded-md">
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
-                          <div className="font-medium mb-1">
-                            {new Date(item.timestamp).toLocaleString()}
-                          </div>
-                          <button 
-                            onClick={() => onDeleteNote?.(candidate.id, item.id)} 
-                            className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 mt-1 sm:mt-0"
-                            title="Delete note"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                        <div className="whitespace-pre-wrap">
-                          {/* Replace @mentions with styled spans */}
-                          {renderMentions(item.notes)}
-                        </div>
-                      </div>
-                    ))
-                  }
-                </div>
-              ) : (
-                <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded-md">
-                  No notes yet
-                </div>
-              )}
-            </div>
+            {/* @mentions suggestions dropdown */}
+            {showMentionSuggestions && filteredCandidates.length > 0 && (
+              <div className="absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                {filteredCandidates.map((c) => (
+                  <div
+                    key={c.id}
+                    onClick={() => insertMention(c)}
+                    className="cursor-pointer hover:bg-gray-100 px-4 py-2 flex items-center"
+                  >
+                    <AtSign className="w-3 h-3 mr-2 text-gray-500" />
+                    {c.name}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
+          
+          <Button
+            size="sm"
+            onClick={submitNote}
+            className="w-full"
+          >
+            Add Note
+          </Button>
+          
+          {/* Notes History */}
+          <div className="mt-2">
+            <h4 className="text-xs font-medium text-gray-500 mb-2">Recent Notes</h4>
+            {isTimelineLoading ? (
+              <div className="text-center py-2">
+                <div className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-solid border-blue-500 border-r-transparent"></div>
+              </div>
+            ) : timeline && timeline.length > 0 ? (
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {timeline
+                  .filter(item => item.notes)
+                  .map(item => (
+                    <div key={item.id} className="text-xs p-2 bg-gray-50 rounded-md">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
+                        <div className="font-medium mb-1">
+                          {new Date(item.timestamp).toLocaleString()}
+                        </div>
+                        <button 
+                          onClick={() => onDeleteNote?.(candidate.id, item.id)} 
+                          className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 mt-1 sm:mt-0"
+                          title="Delete note"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <div className="whitespace-pre-wrap">
+                        {/* Replace @mentions with styled spans */}
+                        {renderMentions(item.notes)}
+                      </div>
+                    </div>
+                  ))
+                }
+              </div>
+            ) : (
+              <div className="text-xs text-gray-500 p-2 bg-gray-50 rounded-md">
+                No notes yet
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-
-      {/* Modal components removed as requested */}
     </div>
   );
 };

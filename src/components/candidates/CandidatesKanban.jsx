@@ -447,10 +447,7 @@ const CandidatesKanban = ({ candidatesByStage = {}, isLoading }) => {
                                 <CandidateCard 
                                   candidate={candidate} 
                                   compact={true}
-                                  onMoveToNextStage={handleMoveToNextStage}
                                   onAddNote={handleAddNote}
-                                  onScheduleInterview={handleScheduleInterview}
-                                  onReject={handleRejectCandidate}
                                   onDeleteNote={handleDeleteNote}
                                 />
                               </div>
