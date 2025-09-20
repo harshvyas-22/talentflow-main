@@ -1,12 +1,7 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
 import Layout from './components/Layout';
-import HomePage from './pages/HomePage';
-import JobsPage from './pages/JobsPage';
-import JobDetailPage from './pages/JobDetailPage';
-import CandidatesPage from './pages/CandidatesPage';
-import CandidateDetailPage from './pages/CandidateDetailPage';
-import AssessmentsPage from './pages/AssessmentsPage';
+import Router from './components/Router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import ErrorBoundary from './components/ErrorBoundary';
 
@@ -35,47 +30,14 @@ const queryClient = new QueryClient({
 // Note: Database is now initialized in main.jsx to avoid duplicate initialization
 
 function App() {
+  // Get the base URL for routing
+  const baseUrl = import.meta.env.BASE_URL || '/';
+
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <BrowserRouter basename={baseUrl}>
         <Layout>
-          <Routes>
-            <Route path="/" element={
-              <ErrorBoundary>
-                <HomePage />
-              </ErrorBoundary>
-            } />
-            <Route path="/jobs" element={
-              <ErrorBoundary>
-                <JobsPage />
-              </ErrorBoundary>
-            } />
-            <Route path="/jobs/:id" element={
-              <ErrorBoundary>
-                <JobDetailPage />
-              </ErrorBoundary>
-            } />
-            <Route path="/candidates" element={
-              <ErrorBoundary>
-                <CandidatesPage />
-              </ErrorBoundary>
-            } />
-            <Route path="/candidates/:candidateId" element={
-              <ErrorBoundary>
-                <CandidateDetailPage />
-              </ErrorBoundary>
-            } />
-            <Route path="/assessments" element={
-              <ErrorBoundary>
-                <AssessmentsPage />
-              </ErrorBoundary>
-            } />
-            <Route path="/jobs/:jobId/assessments" element={
-              <ErrorBoundary>
-                <AssessmentsPage />
-              </ErrorBoundary>
-            } />
-          </Routes>
+          <Router />
         </Layout>
       </BrowserRouter>
     </QueryClientProvider>

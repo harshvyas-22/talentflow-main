@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "postbuild": "cp public/_redirects dist/ && cp render.json dist/ && cp vercel.json dist/",
+    "postbuild": "node scripts/copy-config.js",
     "lint": "eslint .",
     "preview": "vite preview"
   },
