@@ -12,16 +12,12 @@ async function startApp() {
   
   // First try to initialize the database
   try {
-    console.log('Initializing database...');
     dbInitialized = await initializeDatabase();
-    console.log('Database initialization status:', dbInitialized ? 'Success' : 'Failed');
     
     // Check database health even if initialization reports success
     const healthCheck = await checkDatabaseHealth();
-    console.log('Database health check:', healthCheck);
     
     if (!healthCheck.isHealthy && process.env.NODE_ENV === 'production') {
-      console.warn('Database health check failed but continuing in production mode');
       setTimeout(() => {
         toast.warning('Limited data available. Some features may be restricted.', {
           duration: 5000,
@@ -30,7 +26,6 @@ async function startApp() {
     }
     
     if (!dbInitialized && process.env.NODE_ENV === 'production') {
-      console.warn('Database initialization failed but continuing in production mode');
       // In production, show a warning toast but continue
       setTimeout(() => {
         toast.error('Database initialization issue. Some features may be limited.', {
@@ -57,12 +52,9 @@ async function startApp() {
       await worker.start({
         onUnhandledRequest: 'bypass', // Don't warn about unhandled requests
       })
-      console.log('MSW worker started successfully');
     } catch (error) {
       console.error('Failed to start MSW worker:', error);
     }
-  } else {
-    console.log('Running in production mode, MSW worker not started');
   }
 
   // Render the app regardless of database or MSW initialization status

@@ -35,7 +35,6 @@ const JobsPage = () => {
     queryFn: () => {
       // Only send status parameter if not 'all'
       const params = statusFilter !== 'all' ? { status: statusFilter } : {};
-      console.log('Fetching jobs with filter params:', params);
       return jobsApi.getJobs(params);
     },
     retry: 1, // Only retry once to avoid excessive retries on failure
@@ -72,11 +71,9 @@ const JobsPage = () => {
   // Fallback: If API fails, get jobs directly from the database
   useEffect(() => {
     if (isApiError) {
-      console.log("API failed, trying direct database access");
       const getJobsFromDb = async () => {
         try {
           const dbJobs = await db.jobs.toArray();
-          console.log("Got jobs directly from DB:", dbJobs);
           
           // Filter by status if needed
           const filteredJobs = statusFilter !== 'all'
@@ -124,7 +121,6 @@ const JobsPage = () => {
   };
 
   const handleStatusChange = (status) => {
-    console.log(`Status filter changed from ${statusFilter} to ${status}`);
     setStatusFilter(status);
     setCurrentPage(1); // Reset to first page on filter change
   };

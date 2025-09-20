@@ -12,7 +12,6 @@ const JobsList = ({ jobs, isLoading, onEdit, onDelete }) => {
     mutationFn: ({ id, fromOrder, toOrder }) => 
       jobsApi.reorderJob(id, fromOrder, toOrder),
     onSuccess: () => {
-      console.log('Reorder API call succeeded, invalidating jobs query');
       // Force a full refetch by using exact query keys
       queryClient.invalidateQueries(['jobs']);
       queryClient.invalidateQueries(['jobs', 'all']);
@@ -32,19 +31,14 @@ const JobsList = ({ jobs, isLoading, onEdit, onDelete }) => {
   const handleDragEnd = (result) => {
     const { destination, source, draggableId } = result;
     
-    console.log('Drag end:', { destination, source, draggableId });
-    
     // Drop outside the list or same position
     if (!destination || destination.index === source.index) {
-      console.log('No valid destination or same position, skipping reorder');
       return;
     }
 
     const jobId = parseInt(draggableId);
     const fromOrder = source.index + 1;
     const toOrder = destination.index + 1;
-    
-    console.log(`Reordering job ${jobId} from position ${fromOrder} to ${toOrder}`);
 
     // Optimistic update
     queryClient.setQueryData(['jobs'], (oldData) => {
@@ -67,7 +61,6 @@ const JobsList = ({ jobs, isLoading, onEdit, onDelete }) => {
         order: index + 1
       }));
       
-      console.log('Optimistically updated jobs:', updatedJobs);
       return updatedJobs;
     });
     

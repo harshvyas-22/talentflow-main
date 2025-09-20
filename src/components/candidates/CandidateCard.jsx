@@ -31,9 +31,6 @@ const CandidateCard = ({ candidate, compact, onAddNote, onDeleteNote }) => {
     enabled: showMentionSuggestions
   });
 
-  // Debug log to check skills
-  console.log('Candidate skills:', candidate.id, candidate.name, candidate.skills);
-
   // Handle textarea input to detect @ mentions
   const handleNotesChange = (e) => {
     const value = e.target.value;

@@ -36,7 +36,6 @@ const FilterDropdown = ({ label, value, onChange, options }) => {
               <button
                 key={option.value}
                 onClick={() => {
-                  console.log(`Filter option selected: ${option.label} (${option.value})`);
                   onChange(option.value);
                   setIsOpen(false);
                 }}

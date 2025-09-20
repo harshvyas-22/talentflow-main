@@ -268,10 +268,6 @@ const CandidatesKanban = ({ candidatesByStage = {}, isLoading }) => {
   const visibleCandidates = Object.values(candidatesByStage || {})
     .flat();
 
-  // Replaced with conditional logging
-  const debugMode = false; // Set to true for verbose logging
-  if (debugMode) console.log('Visible candidates:', visibleCandidates);
-
   const handleDragEnd = (result) => {
     const { destination, source, draggableId } = result;
 
@@ -309,7 +305,6 @@ const CandidatesKanban = ({ candidatesByStage = {}, isLoading }) => {
 
   // Function to move a candidate to the next stage
   const handleMoveToNextStage = (candidateId) => {
-    console.log('Moving candidate to next stage:', candidateId);
     const candidate = visibleCandidates.find(c => c.id === candidateId);
     if (!candidate) {
       console.error('Candidate not found:', candidateId);
@@ -325,7 +320,6 @@ const CandidatesKanban = ({ candidatesByStage = {}, isLoading }) => {
     }
     
     const nextStage = KANBAN_STAGES[currentStageIndex + 1].key;
-    console.log(`Moving candidate ${candidateId} from ${candidate.stage} to ${nextStage}`);
     
     // Trigger the mutation with optimistic update
     moveCandidateMutation.mutate({ 
@@ -336,7 +330,6 @@ const CandidatesKanban = ({ candidatesByStage = {}, isLoading }) => {
 
   // Function to add a note to a candidate
   const handleAddNote = (candidateId, note) => {
-    console.log('Adding note to candidate:', candidateId, note);
     if (!note.trim()) {
       toast.error('Note cannot be empty');
       return;
@@ -351,7 +344,6 @@ const CandidatesKanban = ({ candidatesByStage = {}, isLoading }) => {
 
   // Function to schedule an interview
   const handleScheduleInterview = (candidateId, scheduledTime) => {
-    console.log('Scheduling interview for candidate:', candidateId, scheduledTime);
     if (!scheduledTime) {
       toast.error('Please select a valid date and time');
       return;
@@ -366,7 +358,6 @@ const CandidatesKanban = ({ candidatesByStage = {}, isLoading }) => {
 
   // Function to reject a candidate
   const handleRejectCandidate = (candidateId, reason) => {
-    console.log('Rejecting candidate:', candidateId, reason);
     if (!reason.trim()) {
       toast.error('Please provide a reason for rejection');
       return;
@@ -381,7 +372,6 @@ const CandidatesKanban = ({ candidatesByStage = {}, isLoading }) => {
   
   // Function to delete a note
   const handleDeleteNote = (candidateId, noteId) => {
-    console.log('Deleting note:', candidateId, noteId);
     if (!noteId) {
       toast.error('Invalid note');
       return;

@@ -157,8 +157,6 @@ const JobCard = ({ job, onEdit, onDelete, isDragging, dragHandleProps }) => {
       </div>
       
       <div className="mt-4 flex flex-wrap gap-2">
-        {/* Debug log for job tags */}
-        {console.log('Job tags:', job.id, job.title, job.tags)}
         {job.tags && job.tags.map((tag, index) => (
           <Badge key={index} variant={getTagVariant(tag)}>{tag}</Badge>
         ))}

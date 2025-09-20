@@ -147,12 +147,6 @@ const HomePage = () => {
           ))}
         </div>
       </div>
-
-      {/* Call to Action */}
-      <div className="bg-gray-50 rounded-lg p-8 text-center">
-        <h2 className="text-2xl font-semibold mb-3">Ready to transform your hiring process?</h2>
-        <p className="text-gray-600">Explore TalentFlow's powerful features and see how we can help streamline your recruitment workflow.</p>
-      </div>
     </div>
   );
 };
